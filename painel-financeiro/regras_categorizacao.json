@@ -1,0 +1,82 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "description": "Fonte de verdade para categorização de transações. Usada pelo painel e por skills de atualização automática."
+  },
+
+  "tags": {
+    "receita":          { "label": "Receita",           "type": "entrada",  "showInReport": false },
+    "receita_pj":       { "label": "Receita PJ",        "type": "entrada",  "showInReport": false },
+    "receita_divisao":  { "label": "Divisão recebida",  "type": "entrada",  "showInReport": false },
+    "cartao":           { "label": "Fatura Cartão",     "type": "saída",    "showInReport": false, "isCardPayment": true },
+    "prolabore":        { "label": "Pró-labore",        "type": "saída",    "showInReport": false, "isInternalTransfer": true },
+    "moradia":          { "label": "Moradia",           "type": "saída",    "showInReport": true  },
+    "alimentação":      { "label": "Alimentação",       "type": "saída",    "showInReport": true  },
+    "transporte":       { "label": "Transporte",        "type": "saída",    "showInReport": true  },
+    "saúde":            { "label": "Saúde",             "type": "saída",    "showInReport": true  },
+    "assinaturas":      { "label": "Assinaturas",       "type": "saída",    "showInReport": true  },
+    "lazer":            { "label": "Lazer",             "type": "saída",    "showInReport": true  },
+    "compras":          { "label": "Compras",           "type": "saída",    "showInReport": true  },
+    "infra":            { "label": "Infra / Cloud",     "type": "saída",    "showInReport": true  },
+    "admin":            { "label": "Administrativo",    "type": "saída",    "showInReport": true  },
+    "impostos":         { "label": "Impostos",          "type": "saída",    "showInReport": true  },
+    "pessoal":          { "label": "Pessoal / RH",      "type": "saída",    "showInReport": true  }
+  },
+
+  "internalTransfers": [
+    "Transferência entre contas próprias",
+    "TED própria",
+    "Pix próprio",
+    "Pró-labore"
+  ],
+
+  "fixedExpenses": [
+    { "match": "Aluguel",             "tag": "moradia",     "note": "Débito automático todo dia 1" },
+    { "match": "Condomínio",          "tag": "moradia",     "note": "Boleto todo dia 1" },
+    { "match": "Netflix",             "tag": "assinaturas", "note": "Débito automático dia 7" },
+    { "match": "Spotify",             "tag": "assinaturas", "note": "Débito automático dia 7" },
+    { "match": "iCloud",              "tag": "assinaturas"  },
+    { "match": "Plano de saúde",      "tag": "saúde",       "note": "Boleto todo dia 20" },
+    { "match": "Academia",            "tag": "saúde"        },
+    { "match": "Internet",            "tag": "moradia"      },
+    { "match": "AWS",                 "tag": "infra"        },
+    { "match": "Google Workspace",    "tag": "infra"        },
+    { "match": "Contador",            "tag": "admin"        },
+    { "match": "DAS Simples",         "tag": "impostos"     },
+    { "match": "IPTU",                "tag": "moradia"      },
+    { "match": "Seguro carro",        "tag": "transporte"   }
+  ],
+
+  "knownDescriptions": [
+    { "match": "iFood",               "tag": "alimentação"  },
+    { "match": "Uber",                "tag": "transporte"   },
+    { "match": "99",                  "tag": "transporte"   },
+    { "match": "Shell",               "tag": "transporte"   },
+    { "match": "Posto",               "tag": "transporte"   },
+    { "match": "Farmácia",            "tag": "saúde"        },
+    { "match": "Drogaria",            "tag": "saúde"        },
+    { "match": "Mercado",             "tag": "alimentação"  },
+    { "match": "Supermercado",        "tag": "alimentação"  },
+    { "match": "Padaria",             "tag": "alimentação"  },
+    { "match": "Restaurante",         "tag": "alimentação"  },
+    { "match": "Fatura Cartão",       "tag": "cartao"       },
+    { "match": "Fatura Nubank",       "tag": "cartao"       },
+    { "match": "NF emitida",          "tag": "receita_pj"   },
+    { "match": "Salário",             "tag": "receita"      },
+    { "match": "Freelancer",          "tag": "pessoal"      }
+  ],
+
+  "people": [
+    { "name": "João",   "relation": "amigo",   "note": "Divide despesas de lazer e restaurantes" }
+  ],
+
+  "accounts": {
+    "pf": [
+      { "id": "conta_corrente", "label": "Conta Corrente",    "bank": "Nubank",   "type": "checking" },
+      { "id": "cartao_nubank",  "label": "Cartão Nubank",     "bank": "Nubank",   "type": "credit_card", "closeDay": 22, "dueDay": 1 }
+    ],
+    "pj": [
+      { "id": "conta_pj",       "label": "Conta PJ",          "bank": "Inter PJ", "type": "checking" }
+    ]
+  }
+}

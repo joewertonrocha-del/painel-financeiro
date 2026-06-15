@@ -1,0 +1,141 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "updatedAt": "2026-06-15T00:00:00Z",
+    "currency": "BRL",
+    "sign_convention": "positive=saída, negative=entrada"
+  },
+
+  "diary": [
+    {
+      "date": "2026-06-01",
+      "transactions": [
+        { "desc": "Salário", "amount": -12500.00, "tag": "receita", "note": "CLT Empresa X" },
+        { "desc": "Aluguel", "amount": 2200.00, "tag": "moradia" },
+        { "desc": "Condomínio", "amount": 680.00, "tag": "moradia" }
+      ]
+    },
+    {
+      "date": "2026-06-03",
+      "transactions": [
+        { "desc": "Mercado Extra", "amount": 347.80, "tag": "alimentação" },
+        { "desc": "iFood", "amount": 62.50, "tag": "alimentação" }
+      ]
+    },
+    {
+      "date": "2026-06-05",
+      "transactions": [
+        { "desc": "Uber", "amount": 28.90, "tag": "transporte" },
+        { "desc": "Posto Shell — Gasolina", "amount": 210.00, "tag": "transporte" }
+      ]
+    },
+    {
+      "date": "2026-06-07",
+      "transactions": [
+        { "desc": "Netflix", "amount": 55.90, "tag": "assinaturas" },
+        { "desc": "Spotify", "amount": 21.90, "tag": "assinaturas" },
+        { "desc": "iCloud 200 GB", "amount": 9.90, "tag": "assinaturas" }
+      ]
+    },
+    {
+      "date": "2026-06-10",
+      "transactions": [
+        { "desc": "Fatura Cartão Nubank", "amount": 3420.15, "tag": "cartao", "note": "Referente ao mês anterior" }
+      ]
+    },
+    {
+      "date": "2026-06-12",
+      "transactions": [
+        { "desc": "Farmácia", "amount": 89.30, "tag": "saúde" },
+        { "desc": "Academia", "amount": 129.90, "tag": "saúde" }
+      ]
+    },
+    {
+      "date": "2026-06-13",
+      "transactions": [
+        { "desc": "Restaurante La Palma", "amount": 145.00, "tag": "alimentação" },
+        { "desc": "Pix — João (divisão jantar)", "amount": -72.50, "tag": "receita_divisao" }
+      ]
+    },
+    {
+      "date": "2026-06-15",
+      "transactions": [
+        { "desc": "Mercado Pão de Açúcar", "amount": 289.40, "tag": "alimentação" }
+      ]
+    }
+  ],
+
+  "cardItems": {
+    "month": "2026-06",
+    "card": "Nubank Roxinho",
+    "closeDate": "2026-06-22",
+    "dueDate": "2026-07-01",
+    "limit": 15000.00,
+    "totalSpent": 3812.45,
+    "categories": [
+      { "tag": "alimentação",   "label": "Alimentação",    "amount": 1240.30 },
+      { "tag": "transporte",    "label": "Transporte",     "amount": 540.00  },
+      { "tag": "assinaturas",   "label": "Assinaturas",    "amount": 312.80  },
+      { "tag": "saúde",         "label": "Saúde",          "amount": 389.90  },
+      { "tag": "lazer",         "label": "Lazer",          "amount": 620.00  },
+      { "tag": "compras",       "label": "Compras",        "amount": 709.45  }
+    ]
+  },
+
+  "cardSpending": {
+    "budgets": [
+      { "tag": "alimentação", "budget": 1500.00 },
+      { "tag": "transporte",  "budget": 600.00  },
+      { "tag": "assinaturas", "budget": 350.00  },
+      { "tag": "saúde",       "budget": 500.00  },
+      { "tag": "lazer",       "budget": 700.00  },
+      { "tag": "compras",     "budget": 800.00  }
+    ]
+  },
+
+  "sched": [
+    { "date": "2026-06-20", "desc": "Plano de saúde",       "amount": 480.00,   "tag": "saúde",      "type": "saída"    },
+    { "date": "2026-06-22", "desc": "IPTU parcela 6/10",    "amount": 310.00,   "tag": "moradia",    "type": "saída"    },
+    { "date": "2026-07-01", "desc": "Fatura Nubank",        "amount": 3812.45,  "tag": "cartao",     "type": "saída"    },
+    { "date": "2026-07-01", "desc": "Salário",              "amount": 12500.00, "tag": "receita",    "type": "entrada"  },
+    { "date": "2026-07-05", "desc": "Internet fibra",       "amount": 109.90,   "tag": "moradia",    "type": "saída"    },
+    { "date": "2026-07-10", "desc": "Seguro carro",         "amount": 350.00,   "tag": "transporte", "type": "saída"    }
+  ],
+
+  "azDiary": [
+    {
+      "date": "2026-06-02",
+      "transactions": [
+        { "desc": "NF emitida — Cliente Alpha", "amount": -8500.00, "tag": "receita_pj", "note": "NF 00142" },
+        { "desc": "Contador", "amount": 890.00, "tag": "admin" }
+      ]
+    },
+    {
+      "date": "2026-06-05",
+      "transactions": [
+        { "desc": "AWS — infra", "amount": 420.30, "tag": "infra" },
+        { "desc": "Google Workspace", "amount": 84.00, "tag": "infra" }
+      ]
+    },
+    {
+      "date": "2026-06-10",
+      "transactions": [
+        { "desc": "Retirada pró-labore", "amount": 5000.00, "tag": "prolabore" }
+      ]
+    },
+    {
+      "date": "2026-06-14",
+      "transactions": [
+        { "desc": "NF emitida — Cliente Beta", "amount": -4200.00, "tag": "receita_pj", "note": "NF 00143" },
+        { "desc": "Freelancer design", "amount": 1200.00, "tag": "pessoal" }
+      ]
+    }
+  ],
+
+  "azSched": [
+    { "date": "2026-06-20", "desc": "DAS Simples Nacional",    "amount": 680.00,  "tag": "impostos", "type": "saída"   },
+    { "date": "2026-06-25", "desc": "Aluguel sala coworking",  "amount": 950.00,  "tag": "admin",    "type": "saída"   },
+    { "date": "2026-07-01", "desc": "NF prevista — Cliente Alpha", "amount": 8500.00, "tag": "receita_pj", "type": "entrada" },
+    { "date": "2026-07-15", "desc": "Pró-labore",              "amount": 5000.00, "tag": "prolabore", "type": "saída"  }
+  ]
+}
