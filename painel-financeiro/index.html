@@ -8,12 +8,11 @@
 <script id="cowork-artifact-meta" type="application/json">
 {
   "name": "Painel Financeiro",
-  "version": "1.0",
+  "version": "1.2",
   "mcpTools": [
     "openfinance_list_transactions",
-    "openfinance_list_transactions_by_item",
     "openfinance_get_credit_card_bill",
-    "openfinance_list_investments",
+    "openfinance_list_accounts",
     "openfinance_force_sync"
   ],
   "dataFiles": ["dados.json", "regras_categorizacao.json"]
@@ -21,310 +20,167 @@
 </script>
 
 <style>
-/* ─── Design tokens ─────────────────────────────────────────── */
 :root {
-  --bg:        #0d0d0f;
-  --surface:   #18181b;
-  --surface-2: #26262b;
-  --hair:      #2e2e35;
-  --text:      #f0f0f3;
-  --text-2:    #a0a0aa;
-  --muted:     #606068;
-  --accent:    #7c6cfa;
-  --pos:       #34d399;
-  --neg:       #f87171;
-  --warn:      #fbbf24;
-  --radius:    8px;
-  --blur:      saturate(160%) blur(18px);
+  --bg:#0d0d0f; --surface:#18181b; --surface-2:#26262b; --hair:#2e2e35;
+  --text:#f0f0f3; --text-2:#a0a0aa; --muted:#606068;
+  --accent:#7c6cfa; --pos:#34d399; --neg:#f87171; --warn:#fbbf24;
+  --radius:8px; --blur:saturate(160%) blur(18px);
 }
 [data-theme="light"] {
-  --bg:        #f5f5f7;
-  --surface:   #ffffff;
-  --surface-2: #f0f0f3;
-  --hair:      #e2e2e7;
-  --text:      #0d0d0f;
-  --text-2:    #505058;
-  --muted:     #a0a0aa;
-  --accent:    #5b4ee0;
-  --pos:       #059669;
-  --neg:       #dc2626;
-  --warn:      #d97706;
+  --bg:#f5f5f7; --surface:#fff; --surface-2:#f0f0f3; --hair:#e2e2e7;
+  --text:#0d0d0f; --text-2:#505058; --muted:#a0a0aa;
+  --accent:#5b4ee0; --pos:#059669; --neg:#dc2626; --warn:#d97706;
 }
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme:light) {
   html:not([data-theme]) {
     --bg:#f5f5f7;--surface:#fff;--surface-2:#f0f0f3;--hair:#e2e2e7;
-    --text:#0d0d0f;--text-2:#505058;--muted:#a0a0aa;--accent:#5b4ee0;
-    --pos:#059669;--neg:#dc2626;--warn:#d97706;
+    --text:#0d0d0f;--text-2:#505058;--muted:#a0a0aa;
+    --accent:#5b4ee0;--pos:#059669;--neg:#dc2626;--warn:#d97706;
   }
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;line-height:1.5;min-height:100vh}
+button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
+.tabular{font-variant-numeric:tabular-nums}
 
-/* ─── Reset & base ──────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 14px; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  line-height: 1.5;
-  min-height: 100vh;
+/* Topbar */
+#topbar{
+  position:sticky;top:0;z-index:100;
+  background:color-mix(in srgb,var(--bg) 70%,transparent);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border-bottom:1px solid var(--hair);
+  display:flex;align-items:center;gap:12px;padding:0 24px;height:52px;
 }
-a { color: inherit; text-decoration: none; }
-button { cursor: pointer; border: none; background: none; color: inherit; font: inherit; }
-input { font: inherit; color: inherit; background: none; border: none; }
-.tabular { font-variant-numeric: tabular-nums; }
+#topbar .brand{font-size:13px;font-weight:600;margin-right:4px;white-space:nowrap}
+.seg-tabs{display:flex;gap:2px;background:var(--surface-2);border:1px solid var(--hair);border-radius:20px;padding:2px}
+.seg-tabs button{font-size:12px;font-weight:500;padding:3px 14px;border-radius:16px;color:var(--text-2);transition:all .15s}
+.seg-tabs button.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.spacer{flex:1}
+.icon-btn{width:30px;height:30px;border-radius:50%;background:var(--surface-2);border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-2)}
+.icon-btn:hover{color:var(--text);border-color:var(--muted)}
+#btn-update{font-size:12px;font-weight:500;padding:0 14px;height:30px;border-radius:15px;background:var(--accent);color:#fff;transition:opacity .15s}
+#btn-update:hover{opacity:.85}
+#btn-update.loading{opacity:.5;pointer-events:none}
 
-/* ─── Topbar ────────────────────────────────────────────────── */
-#topbar {
-  position: sticky; top: 0; z-index: 100;
-  background: color-mix(in srgb, var(--bg) 70%, transparent);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  border-bottom: 1px solid var(--hair);
-  display: flex; align-items: center; gap: 12px;
-  padding: 0 24px; height: 52px;
-}
-#topbar .brand {
-  font-size: 13px; font-weight: 600; color: var(--text);
-  margin-right: 8px; white-space: nowrap;
-}
-.seg-tabs {
-  display: flex; gap: 2px;
-  background: var(--surface-2);
-  border: 1px solid var(--hair);
-  border-radius: 20px; padding: 2px;
-}
-.seg-tabs button {
-  font-size: 12px; font-weight: 500;
-  padding: 3px 14px; border-radius: 16px;
-  color: var(--text-2); transition: all .15s;
-}
-.seg-tabs button.active {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: 0 1px 3px rgba(0,0,0,.25);
-}
-.spacer { flex: 1; }
-#topbar .actions { display: flex; gap: 8px; }
-.icon-btn {
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  background: var(--surface-2);
-  border: 1px solid var(--hair);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; color: var(--text-2);
-  transition: all .15s;
-}
-.icon-btn:hover { color: var(--text); border-color: var(--muted); }
-#btn-update {
-  font-size: 12px; font-weight: 500;
-  padding: 0 14px; height: 30px; border-radius: 15px;
-  background: var(--accent); color: #fff;
-  transition: opacity .15s;
-}
-#btn-update:hover { opacity: .85; }
-#btn-update.loading { opacity: .5; pointer-events: none; }
+/* Main */
+main{max-width:960px;margin:0 auto;padding:32px 24px 80px}
 
-/* ─── Main layout ───────────────────────────────────────────── */
-main { max-width: 960px; margin: 0 auto; padding: 32px 24px 80px; }
+/* Section */
+.section-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--hair)}
+.section-header h2{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.section-hint{font-size:12px;color:var(--muted)}
+section{margin-bottom:40px}
 
-/* ─── Section headers ───────────────────────────────────────── */
-.section-header {
-  display: flex; align-items: baseline; justify-content: space-between;
-  margin-bottom: 16px; padding-bottom: 10px;
-  border-bottom: 1px solid var(--hair);
-}
-.section-header h2 { font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
-.section-hint { font-size: 12px; color: var(--muted); }
+/* Summary grid */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:40px}
+.sum-card{background:var(--surface);border:1px solid var(--hair);border-radius:var(--radius);padding:16px}
+.sum-card .label{font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.sum-card .value{font-size:22px;font-weight:700}
+.sum-card .sub{font-size:11px;color:var(--text-2);margin-top:2px}
+.col-pos{color:var(--pos)} .col-neg{color:var(--neg)} .col-warn{color:var(--warn)} .col-muted{color:var(--muted)}
 
-section { margin-bottom: 40px; }
+/* Alert */
+.alert{background:color-mix(in srgb,var(--neg) 12%,transparent);border:1px solid color-mix(in srgb,var(--neg) 35%,transparent);border-radius:var(--radius);padding:12px 16px;font-size:12px;color:var(--neg);margin-bottom:24px}
 
-/* ─── Summary cards ─────────────────────────────────────────── */
-.summary-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
-  margin-bottom: 40px;
-}
-.sum-card {
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-.sum-card .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
-.sum-card .value { font-size: 22px; font-weight: 700; }
-.sum-card .sub   { font-size: 11px; color: var(--text-2); margin-top: 2px; }
-.col-pos { color: var(--pos); }
-.col-neg { color: var(--neg); }
-.col-warn { color: var(--warn); }
-.col-muted { color: var(--muted); }
+/* Calendar */
+.cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.cal-nav span{font-size:14px;font-weight:600;flex:1;text-align:center}
+.cal-nav button{font-size:16px;color:var(--text-2);padding:4px 8px;border-radius:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-day-name{text-align:center;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:4px 0 8px}
+.cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text-2);transition:background .12s;min-height:38px}
+.cal-cell:hover{background:var(--surface-2);color:var(--text)}
+.cal-cell.today{font-weight:700;color:var(--text)}
+.cal-cell.selected{background:var(--accent);color:#fff}
+.cal-cell.other-month{color:var(--muted);opacity:.4}
+.cal-dot{width:4px;height:4px;border-radius:50%;margin-top:2px;background:var(--accent)}
+.cal-cell.selected .cal-dot{background:rgba(255,255,255,.7)}
+.day-detail{background:var(--surface);border:1px solid var(--hair);border-radius:var(--radius);padding:16px 20px;margin-top:16px;min-height:56px}
+.day-title{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.tx-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--hair)}
+.tx-row:last-child{border-bottom:none}
+.tx-desc{font-size:13px}
+.tx-tag{font-size:10px;color:var(--muted);background:var(--surface-2);border-radius:4px;padding:1px 6px;margin-left:8px}
+.tx-amount{font-size:13px;font-weight:600}
+.empty-day{color:var(--muted);font-size:13px}
 
-/* ─── Calendar ──────────────────────────────────────────────── */
-.cal-nav {
-  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
-}
-.cal-nav span { font-size: 14px; font-weight: 600; flex: 1; text-align: center; }
-.cal-nav button { font-size: 16px; color: var(--text-2); padding: 4px 8px; border-radius: 4px; }
-.cal-nav button:hover { color: var(--text); }
-.cal-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
-}
-.cal-day-name {
-  text-align: center; font-size: 10px; color: var(--muted);
-  text-transform: uppercase; letter-spacing: .06em; padding: 4px 0 8px;
-}
-.cal-cell {
-  aspect-ratio: 1;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  border-radius: 6px; cursor: pointer; position: relative;
-  font-size: 12px; color: var(--text-2); transition: background .12s;
-  min-height: 38px;
-}
-.cal-cell:hover { background: var(--surface-2); color: var(--text); }
-.cal-cell.today { font-weight: 700; color: var(--text); }
-.cal-cell.selected { background: var(--accent); color: #fff; }
-.cal-cell.selected:hover { background: var(--accent); }
-.cal-cell.other-month { color: var(--muted); opacity: .4; }
-.cal-dot {
-  width: 4px; height: 4px; border-radius: 50%; margin-top: 2px;
-  background: var(--accent);
-}
-.cal-cell.selected .cal-dot { background: rgba(255,255,255,.7); }
+/* Pra onde foi */
+.cat-row{margin-bottom:12px}
+.cat-row-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.cat-label{font-size:13px}
+.cat-values{font-size:12px;color:var(--text-2);display:flex;gap:8px}
+.cat-bar-bg{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .4s}
 
-/* ─── Day detail ────────────────────────────────────────────── */
-#day-detail {
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  border-radius: var(--radius);
-  padding: 16px 20px;
-  margin-top: 16px;
-  min-height: 56px;
-}
-#day-detail .day-title { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .05em; }
-.tx-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 7px 0; border-bottom: 1px solid var(--hair);
-}
-.tx-row:last-child { border-bottom: none; }
-.tx-desc { font-size: 13px; }
-.tx-tag {
-  font-size: 10px; color: var(--muted); background: var(--surface-2);
-  border-radius: 4px; padding: 1px 6px; margin-left: 8px;
-}
-.tx-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.tx-amount { font-size: 13px; font-weight: 600; }
-.empty-day { color: var(--muted); font-size: 13px; }
+/* Card */
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.card-name{font-size:13px;font-weight:600}
+.card-meta{font-size:11px;color:var(--muted)}
+.card-block{background:var(--surface);border:1px solid var(--hair);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.progress-bar{height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-bottom:16px}
+.progress-bar .fill{height:100%;border-radius:3px;background:var(--accent)}
+.progress-bar .fill.warn{background:var(--warn)}
+.progress-bar .fill.over{background:var(--neg)}
+.cat-spending-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
+.cs-card{background:var(--surface-2);border-radius:6px;padding:12px}
+.cs-top{display:flex;justify-content:space-between;margin-bottom:7px}
+.cs-label{font-size:12px;font-weight:500}
+.cs-vals{font-size:11px;color:var(--text-2)}
+.cs-bar{height:3px;background:var(--hair);border-radius:2px;overflow:hidden}
+.cs-fill{height:100%;border-radius:2px;background:var(--accent)}
+.cs-fill.warn{background:var(--warn)} .cs-fill.over{background:var(--neg)}
 
-/* ─── Pra onde foi ──────────────────────────────────────────── */
-.cat-row { margin-bottom: 12px; }
-.cat-row-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
-.cat-label { font-size: 13px; }
-.cat-values { font-size: 12px; color: var(--text-2); display: flex; gap: 8px; }
-.cat-bar-bg { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
-.cat-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width .4s; }
-.cat-bar-fill.warn { background: var(--warn); }
-.cat-bar-fill.over { background: var(--neg); }
+/* Sched */
+.sched-list{display:flex;flex-direction:column;gap:8px}
+.sched-row{background:var(--surface);border:1px solid var(--hair);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:16px}
+.sched-date{font-size:11px;color:var(--muted);min-width:60px}
+.sched-desc{font-size:13px;flex:1}
+.sched-tag{font-size:10px;color:var(--muted);background:var(--surface-2);border-radius:4px;padding:1px 6px}
+.sched-amount{font-size:13px;font-weight:600}
 
-/* ─── Card spending ─────────────────────────────────────────── */
-.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.card-header .card-name { font-size: 13px; font-weight: 600; }
-.card-header .card-meta { font-size: 11px; color: var(--muted); }
-.progress-bar-big { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-bottom: 20px; }
-.progress-bar-big .fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width .4s; }
-.cat-spending-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
-.cat-spend-card {
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  border-radius: var(--radius);
-  padding: 14px;
-}
-.cat-spend-card .cs-top { display: flex; justify-content: space-between; margin-bottom: 8px; }
-.cat-spend-card .cs-label { font-size: 12px; font-weight: 500; }
-.cat-spend-card .cs-vals { font-size: 11px; color: var(--text-2); }
-.cat-spend-card .cs-bar { height: 3px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
-.cat-spend-card .cs-fill { height: 100%; border-radius: 2px; background: var(--accent); }
-.cat-spend-card .cs-fill.warn { background: var(--warn); }
-.cat-spend-card .cs-fill.over { background: var(--neg); }
+/* Status bar */
+#status-bar{position:fixed;bottom:0;left:0;right:0;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-top:1px solid var(--hair);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:36px;font-size:11px;color:var(--muted)}
 
-/* ─── Scheduled ─────────────────────────────────────────────── */
-.sched-list { display: flex; flex-direction: column; gap: 8px; }
-.sched-row {
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  display: flex; align-items: center; gap: 16px;
-}
-.sched-date { font-size: 11px; color: var(--muted); min-width: 60px; }
-.sched-desc { font-size: 13px; flex: 1; }
-.sched-tag { font-size: 10px; color: var(--muted); background: var(--surface-2); border-radius: 4px; padding: 1px 6px; }
-.sched-amount { font-size: 13px; font-weight: 600; }
+/* Tabs */
+.tab-panel{display:none}
+.tab-panel.active{display:block}
 
-/* ─── Status bar ─────────────────────────────────────────────── */
-#status-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: color-mix(in srgb, var(--bg) 85%, transparent);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  border-top: 1px solid var(--hair);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px; height: 36px; font-size: 11px; color: var(--muted);
-}
-
-/* ─── Tab panels ─────────────────────────────────────────────── */
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
-
-/* ─── Spinner ───────────────────────────────────────────────── */
-@keyframes spin { to { transform: rotate(360deg); } }
-.spinner {
-  display: inline-block;
-  width: 12px; height: 12px;
-  border: 2px solid rgba(255,255,255,.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-  vertical-align: middle;
-}
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
 </style>
 </head>
-
 <body>
 
-<!-- ─── Topbar ─────────────────────────────────────────────── -->
 <div id="topbar">
   <span class="brand">Financeiro</span>
-
   <div class="seg-tabs" id="tab-switcher">
-    <button class="active" data-tab="pf">Pessoal</button>
-    <button data-tab="pj">Empresa</button>
+    <button class="active" data-tab="pf">Joewerton</button>
+    <button data-tab="lu">Lucyana</button>
   </div>
-
   <div class="spacer"></div>
-
-  <div class="actions">
-    <button class="icon-btn" id="btn-theme" title="Alternar tema">
-      <span id="theme-icon">◑</span>
-    </button>
+  <div style="display:flex;gap:8px">
+    <button class="icon-btn" id="btn-theme" title="Tema"><span id="theme-icon">◑</span></button>
     <button id="btn-update">Atualizar</button>
   </div>
 </div>
 
-<!-- ─── Main ──────────────────────────────────────────────── -->
 <main>
 
-  <!-- PF tab -->
+  <!-- ── JOEWERTON ── -->
   <div class="tab-panel active" id="panel-pf">
 
-    <!-- Summary -->
-    <div class="summary-grid" id="pf-summary">
+    <div class="summary-grid">
       <div class="sum-card">
         <div class="label">Entradas junho</div>
         <div class="value col-pos tabular" id="pf-in">—</div>
-        <div class="sub">recebido no mês</div>
+        <div class="sub">S3 Vertice e outros</div>
       </div>
       <div class="sum-card">
         <div class="label">Saídas junho</div>
         <div class="value col-neg tabular" id="pf-out">—</div>
-        <div class="sub">gasto no mês (exc. fatura)</div>
+        <div class="sub">excl. fatura e ignorados</div>
       </div>
       <div class="sum-card">
         <div class="label">Saldo do mês</div>
@@ -332,438 +188,363 @@ section { margin-bottom: 40px; }
         <div class="sub" id="pf-balance-sub"></div>
       </div>
       <div class="sum-card">
-        <div class="label">Fatura atual</div>
+        <div class="label">Fatura Nubank</div>
         <div class="value tabular" id="pf-card-total">—</div>
         <div class="sub" id="pf-card-sub"></div>
       </div>
     </div>
 
-    <!-- Calendar + day detail -->
     <section>
       <div class="section-header">
         <h2>Calendário</h2>
-        <span class="section-hint" id="pf-cal-hint">Clique em um dia para ver o extrato</span>
+        <span class="section-hint">Clique em um dia para ver o extrato</span>
       </div>
-
       <div class="cal-nav">
-        <button id="pf-prev-month">&#8249;</button>
+        <button id="pf-prev">&#8249;</button>
         <span id="pf-cal-title"></span>
-        <button id="pf-next-month">&#8250;</button>
+        <button id="pf-next">&#8250;</button>
       </div>
-
       <div class="cal-grid" id="pf-cal-grid"></div>
-
-      <div id="day-detail">
-        <div class="empty-day">Selecione um dia para ver as transações.</div>
-      </div>
+      <div class="day-detail" id="pf-day-detail"><div class="empty-day">Selecione um dia.</div></div>
     </section>
 
-    <!-- Pra onde foi -->
     <section>
       <div class="section-header">
         <h2>Pra onde foi</h2>
-        <span class="section-hint">Despesas do mês por categoria (excl. fatura e transferências)</span>
+        <span class="section-hint">Despesas do mês (excl. fatura, invest. e ignorados)</span>
       </div>
       <div id="pf-categories"></div>
     </section>
 
-    <!-- Card spending -->
     <section>
       <div class="section-header">
-        <h2>Cartão de crédito</h2>
+        <h2>Cartão Nubank Gold</h2>
         <span class="section-hint" id="pf-card-dates"></span>
       </div>
       <div id="pf-card-section"></div>
     </section>
 
-    <!-- Scheduled -->
     <section>
       <div class="section-header">
-        <h2>Agenda de pagamentos</h2>
-        <span class="section-hint">Próximas entradas e saídas previstas</span>
+        <h2>Agenda</h2>
+        <span class="section-hint">Próximas contas</span>
       </div>
       <div class="sched-list" id="pf-sched"></div>
     </section>
 
   </div><!-- /panel-pf -->
 
-  <!-- PJ tab -->
-  <div class="tab-panel" id="panel-pj">
+  <!-- ── LUCYANA ── -->
+  <div class="tab-panel" id="panel-lu">
+
+    <div id="lu-alert"></div>
 
     <div class="summary-grid">
       <div class="sum-card">
-        <div class="label">Receitas junho</div>
-        <div class="value col-pos tabular" id="pj-in">—</div>
-        <div class="sub">notas emitidas no mês</div>
+        <div class="label">Conta Itaú</div>
+        <div class="value col-neg tabular" id="lu-conta">—</div>
+        <div class="sub">saldo (cheque especial ativo)</div>
       </div>
       <div class="sum-card">
         <div class="label">Saídas junho</div>
-        <div class="value col-neg tabular" id="pj-out">—</div>
-        <div class="sub">despesas da empresa</div>
+        <div class="value col-neg tabular" id="lu-out">—</div>
+        <div class="sub">excl. faturas e transf. próprias</div>
       </div>
       <div class="sum-card">
-        <div class="label">Resultado do mês</div>
-        <div class="value tabular" id="pj-balance">—</div>
+        <div class="label">Total dívida cartões</div>
+        <div class="value col-neg tabular" id="lu-card-debt">—</div>
+        <div class="sub">4 cartões Itaú Personnalité</div>
+      </div>
+      <div class="sum-card">
+        <div class="label">Impostos em jun</div>
+        <div class="value col-warn tabular" id="lu-impostos">—</div>
+        <div class="sub">Parnamirim + Extremoz</div>
       </div>
     </div>
 
     <section>
       <div class="section-header">
         <h2>Calendário</h2>
-        <span class="section-hint" id="pj-cal-hint">Clique em um dia para ver as transações</span>
+        <span class="section-hint">Clique em um dia para ver o extrato</span>
       </div>
-
       <div class="cal-nav">
-        <button id="pj-prev-month">&#8249;</button>
-        <span id="pj-cal-title"></span>
-        <button id="pj-next-month">&#8250;</button>
+        <button id="lu-prev">&#8249;</button>
+        <span id="lu-cal-title"></span>
+        <button id="lu-next">&#8250;</button>
       </div>
-
-      <div class="cal-grid" id="pj-cal-grid"></div>
-
-      <div id="pj-day-detail">
-        <div class="empty-day">Selecione um dia para ver as transações.</div>
-      </div>
+      <div class="cal-grid" id="lu-cal-grid"></div>
+      <div class="day-detail" id="lu-day-detail"><div class="empty-day">Selecione um dia.</div></div>
     </section>
 
     <section>
       <div class="section-header">
-        <h2>Extrato do mês</h2>
-        <span class="section-hint">Todas as movimentações da empresa</span>
+        <h2>Cartões Itaú Personnalité</h2>
+        <span class="section-hint">4 cartões ativos</span>
       </div>
-      <div id="pj-categories"></div>
+      <div id="lu-cards-section"></div>
+    </section>
+
+    <section>
+      <div class="section-header">
+        <h2>Pra onde foi</h2>
+        <span class="section-hint">Despesas do mês (excl. faturas e transf. próprias)</span>
+      </div>
+      <div id="lu-categories"></div>
     </section>
 
     <section>
       <div class="section-header">
         <h2>Agenda</h2>
-        <span class="section-hint">Obrigações e recebimentos previstos</span>
+        <span class="section-hint">Próximas faturas</span>
       </div>
-      <div class="sched-list" id="pj-sched"></div>
+      <div class="sched-list" id="lu-sched"></div>
     </section>
 
-  </div><!-- /panel-pj -->
+  </div><!-- /panel-lu -->
 
 </main>
 
 <div id="status-bar">
-  <span id="status-left">Carregando dados...</span>
+  <span id="status-left">Carregando...</span>
   <span id="status-right"></span>
 </div>
 
 <script>
-// ─── Utilities ──────────────────────────────────────────────
-const BRL = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.abs(v));
-const dateLabel = d => {
-  const [y, m, day] = d.split('-');
-  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  return `${Number(day)} ${months[Number(m)-1]}`;
-};
-const monthLabel = (y, m) => {
-  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  return `${months[m]} ${y}`;
-};
+// ── Utilities ──────────────────────────────────────────────────
+const BRL = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Math.abs(v));
+const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const monthsS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const pad = n => String(n).padStart(2,'0');
 const today = new Date();
 const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+const dateLabel = d => { const [y,m,day]=d.split('-'); return `${Number(day)} ${monthsS[Number(m)-1]}`; };
 
-// ─── Theme ──────────────────────────────────────────────────
+// ── Theme ──────────────────────────────────────────────────────
 const themes = ['dark','light','auto'];
-let themeIdx = themes.indexOf(localStorage.getItem('theme') || 'dark');
+let themeIdx = themes.indexOf(localStorage.getItem('theme')||'dark');
 const applyTheme = () => {
   const t = themes[themeIdx];
-  document.documentElement.setAttribute('data-theme', t === 'auto' ? '' : t);
+  document.documentElement.setAttribute('data-theme', t==='auto'?'':t);
   document.getElementById('theme-icon').textContent = ['◑','○','◕'][themeIdx];
 };
 applyTheme();
-document.getElementById('btn-theme').onclick = () => {
-  themeIdx = (themeIdx + 1) % 3;
-  localStorage.setItem('theme', themes[themeIdx]);
-  applyTheme();
-};
+document.getElementById('btn-theme').onclick = () => { themeIdx=(themeIdx+1)%3; localStorage.setItem('theme',themes[themeIdx]); applyTheme(); };
 
-// ─── Tabs ───────────────────────────────────────────────────
+// ── Tabs ───────────────────────────────────────────────────────
 document.getElementById('tab-switcher').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tab]');
   if (!btn) return;
-  document.querySelectorAll('.seg-tabs button').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.seg-tabs button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
 });
 
-// ─── Calendar state ──────────────────────────────────────────
+// ── Calendar ───────────────────────────────────────────────────
 const calState = {
-  pf: { year: today.getFullYear(), month: today.getMonth(), selected: todayStr },
-  pj: { year: today.getFullYear(), month: today.getMonth(), selected: todayStr }
+  pf: { year:today.getFullYear(), month:today.getMonth(), selected:todayStr },
+  lu: { year:today.getFullYear(), month:today.getMonth(), selected:todayStr }
 };
 
-// ─── Calendar renderer ───────────────────────────────────────
 function renderCalendar(prefix, diary, detailEl) {
   const st = calState[prefix];
-  const { year, month, selected } = st;
+  document.getElementById(`${prefix}-cal-title`).textContent = `${months[st.month]} ${st.year}`;
+  document.getElementById(`${prefix}-prev`).onclick = () => { st.month--; if(st.month<0){st.month=11;st.year--;} renderCalendar(prefix,diary,detailEl); };
+  document.getElementById(`${prefix}-next`).onclick = () => { st.month++; if(st.month>11){st.month=0;st.year++;} renderCalendar(prefix,diary,detailEl); };
 
-  document.getElementById(`${prefix}-cal-title`).textContent = monthLabel(year, month);
-  document.getElementById(`${prefix}-prev-month`).onclick = () => {
-    st.month--; if (st.month < 0) { st.month = 11; st.year--; }
-    renderCalendar(prefix, diary, detailEl);
-  };
-  document.getElementById(`${prefix}-next-month`).onclick = () => {
-    st.month++; if (st.month > 11) { st.month = 0; st.year++; }
-    renderCalendar(prefix, diary, detailEl);
-  };
-
-  // build dot lookup
   const dots = {};
   diary.forEach(d => { dots[d.date] = true; });
 
   const grid = document.getElementById(`${prefix}-cal-grid`);
   grid.innerHTML = '';
   ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(d => {
-    const el = document.createElement('div');
-    el.className = 'cal-day-name'; el.textContent = d; grid.appendChild(el);
+    const el = document.createElement('div'); el.className='cal-day-name'; el.textContent=d; grid.appendChild(el);
   });
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const prevDays = new Date(year, month, 0).getDate();
+  const firstDay = new Date(st.year, st.month, 1).getDay();
+  const daysInMonth = new Date(st.year, st.month+1, 0).getDate();
+  const prevDays = new Date(st.year, st.month, 0).getDate();
 
-  // prev month
-  for (let i = firstDay - 1; i >= 0; i--) {
-    const cell = document.createElement('div');
-    cell.className = 'cal-cell other-month';
-    cell.textContent = prevDays - i;
-    grid.appendChild(cell);
+  for (let i=firstDay-1;i>=0;i--) {
+    const c=document.createElement('div'); c.className='cal-cell other-month'; c.textContent=prevDays-i; grid.appendChild(c);
   }
-  // current month
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${pad(month+1)}-${pad(d)}`;
-    const cell = document.createElement('div');
-    cell.className = 'cal-cell';
-    if (dateStr === todayStr) cell.classList.add('today');
-    if (dateStr === selected) cell.classList.add('selected');
-    cell.innerHTML = `<span>${d}</span>${dots[dateStr] ? '<div class="cal-dot"></div>' : ''}`;
-    cell.addEventListener('click', () => {
-      st.selected = dateStr;
-      renderCalendar(prefix, diary, detailEl);
-      renderDayDetail(dateStr, diary, detailEl);
-    });
-    grid.appendChild(cell);
+  for (let d=1;d<=daysInMonth;d++) {
+    const ds=`${st.year}-${pad(st.month+1)}-${pad(d)}`;
+    const c=document.createElement('div'); c.className='cal-cell';
+    if(ds===todayStr) c.classList.add('today');
+    if(ds===st.selected) c.classList.add('selected');
+    c.innerHTML=`<span>${d}</span>${dots[ds]?'<div class="cal-dot"></div>':''}`;
+    c.addEventListener('click',()=>{ st.selected=ds; renderCalendar(prefix,diary,detailEl); renderDayDetail(ds,diary,detailEl); });
+    grid.appendChild(c);
   }
-  // next month
-  const total = firstDay + daysInMonth;
-  const nextCells = (7 - (total % 7)) % 7;
-  for (let d = 1; d <= nextCells; d++) {
-    const cell = document.createElement('div');
-    cell.className = 'cal-cell other-month';
-    cell.textContent = d;
-    grid.appendChild(cell);
-  }
-
-  renderDayDetail(selected, diary, detailEl);
+  const total=firstDay+daysInMonth;
+  for(let d=1;d<=(7-(total%7))%7;d++){const c=document.createElement('div');c.className='cal-cell other-month';c.textContent=d;grid.appendChild(c);}
+  renderDayDetail(st.selected,diary,detailEl);
 }
 
-// ─── Day detail renderer ─────────────────────────────────────
 function renderDayDetail(dateStr, diary, el) {
-  const entry = diary.find(d => d.date === dateStr);
-  const [y, m, d] = dateStr.split('-');
-  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const entry = diary.find(d=>d.date===dateStr);
+  const [y,m,d] = dateStr.split('-');
   const title = `${Number(d)} de ${months[Number(m)-1]} de ${y}`;
-
-  if (!entry || !entry.transactions.length) {
-    el.innerHTML = `<div class="day-title">${title}</div><div class="empty-day">Sem lançamentos neste dia.</div>`;
-    return;
-  }
-
-  let html = `<div class="day-title">${title}</div>`;
+  if (!entry||!entry.transactions.length) { el.innerHTML=`<div class="day-title">${title}</div><div class="empty-day">Sem lançamentos.</div>`; return; }
+  let html=`<div class="day-title">${title}</div>`;
   entry.transactions.forEach(tx => {
-    const isIn = tx.amount < 0;
-    const cls = isIn ? 'col-pos' : 'col-neg';
-    const sign = isIn ? '+' : '−';
-    html += `<div class="tx-row">
-      <div class="tx-left">
-        <span class="tx-desc">${tx.desc}</span>
-        <span class="tx-tag">${tx.tag}</span>
-      </div>
-      <div class="tx-right">
-        <span class="tx-amount ${cls} tabular">${sign} ${BRL(tx.amount)}</span>
-      </div>
-    </div>`;
+    const isIn=tx.amount<0; const cls=isIn?'col-pos':'col-neg'; const sign=isIn?'+':'−';
+    html+=`<div class="tx-row"><div><span class="tx-desc">${tx.desc}</span><span class="tx-tag">${tx.tag}</span></div><span class="tx-amount ${cls} tabular">${sign} ${BRL(tx.amount)}</span></div>`;
   });
-  el.innerHTML = html;
+  el.innerHTML=html;
 }
 
-// ─── Pra onde foi ────────────────────────────────────────────
-function renderCategories(diary, rules, el) {
-  const skipTags = new Set();
-  Object.entries(rules.tags || {}).forEach(([tag, meta]) => {
-    if (!meta.showInReport || meta.isCardPayment || meta.isInternalTransfer) skipTags.add(tag);
-  });
+// ── Pra onde foi ───────────────────────────────────────────────
+const SKIP_TAGS = new Set(['cartao','investimentos','transferência_propria','receita_s3','ignorar','receita','receita_joewerton','saque','info']);
 
-  const totals = {};
-  diary.forEach(day => {
-    day.transactions.forEach(tx => {
-      if (tx.amount <= 0) return; // skip entries
-      if (skipTags.has(tx.tag)) return;
-      totals[tx.tag] = (totals[tx.tag] || 0) + tx.amount;
-    });
-  });
-
-  const sorted = Object.entries(totals).sort((a,b) => b[1] - a[1]);
-  const grand = sorted.reduce((s,[,v]) => s+v, 0);
-
-  if (!sorted.length) { el.innerHTML = '<div class="empty-day col-muted">Sem dados de categorias.</div>'; return; }
-
-  el.innerHTML = sorted.map(([tag, amt]) => {
-    const pct = grand > 0 ? (amt / grand * 100) : 0;
-    const label = rules.tags?.[tag]?.label || tag;
-    return `<div class="cat-row">
-      <div class="cat-row-top">
-        <span class="cat-label">${label}</span>
-        <span class="cat-values">
-          <span class="tabular">${BRL(amt)}</span>
-          <span class="col-muted">${pct.toFixed(1)}%</span>
-        </span>
-      </div>
-      <div class="cat-bar-bg">
-        <div class="cat-bar-fill" style="width:${pct.toFixed(1)}%"></div>
-      </div>
-    </div>`;
+function renderCategories(diary, el) {
+  const totals={};
+  diary.forEach(day => day.transactions.forEach(tx => {
+    if(tx.amount<=0) return;
+    if(SKIP_TAGS.has(tx.tag)) return;
+    totals[tx.tag]=(totals[tx.tag]||0)+tx.amount;
+  }));
+  const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  const grand=sorted.reduce((s,[,v])=>s+v,0);
+  if(!sorted.length){el.innerHTML='<div class="empty-day col-muted">Sem dados.</div>';return;}
+  el.innerHTML=sorted.map(([tag,amt])=>{
+    const pct=grand>0?(amt/grand*100):0;
+    return `<div class="cat-row"><div class="cat-row-top"><span class="cat-label">${tag}</span><span class="cat-values"><span class="tabular">${BRL(amt)}</span><span class="col-muted">${pct.toFixed(1)}%</span></span></div><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct.toFixed(1)}%"></div></div></div>`;
   }).join('');
 }
 
-// ─── Card section ─────────────────────────────────────────────
+// ── Card (Joewerton) ───────────────────────────────────────────
 function renderCard(cardItems, cardSpending, el, datesEl) {
-  if (!cardItems) { el.innerHTML = '<div class="empty-day col-muted">Sem dados de cartão.</div>'; return; }
-
-  const { card, closeDate, dueDate, limit, totalSpent, categories } = cardItems;
-  const budgets = Object.fromEntries((cardSpending?.budgets || []).map(b => [b.tag, b.budget]));
-  const pct = limit > 0 ? (totalSpent / limit * 100) : 0;
-  const pctCls = pct > 90 ? 'over' : pct > 75 ? 'warn' : '';
-
-  datesEl.textContent = `Fecha ${dateLabel(closeDate)} · Vence ${dateLabel(dueDate)}`;
-
-  el.innerHTML = `
-    <div class="card-header">
-      <span class="card-name">${card}</span>
-      <span class="card-meta tabular">${BRL(totalSpent)} / ${BRL(limit)} · ${pct.toFixed(0)}% do limite</span>
-    </div>
-    <div class="progress-bar-big">
-      <div class="fill ${pctCls}" style="width:${Math.min(pct,100).toFixed(1)}%"></div>
-    </div>
-    <div class="cat-spending-grid">
-      ${categories.map(cat => {
-        const budget = budgets[cat.tag] || 0;
-        const catPct = budget > 0 ? (cat.amount / budget * 100) : 0;
-        const cls = catPct > 90 ? 'over' : catPct > 75 ? 'warn' : '';
-        return `<div class="cat-spend-card">
-          <div class="cs-top">
-            <span class="cs-label">${cat.label}</span>
-            <span class="cs-vals tabular">${BRL(cat.amount)}${budget ? ` / ${BRL(budget)}` : ''}</span>
-          </div>
-          <div class="cs-bar">
-            <div class="cs-fill ${cls}" style="width:${budget ? Math.min(catPct,100).toFixed(1) : '30'}%"></div>
-          </div>
-        </div>`;
-      }).join('')}
+  if(!cardItems){el.innerHTML='<div class="empty-day col-muted">Sem dados.</div>';return;}
+  const {card,closeDate,dueDate,limit,totalSpent,categories}=cardItems;
+  const budgets=Object.fromEntries((cardSpending?.budgets||[]).map(b=>[b.tag,b.budget]));
+  const pct=limit>0?(totalSpent/limit*100):0;
+  const cls=pct>90?'over':pct>75?'warn':'';
+  datesEl.textContent=`Fecha ${dateLabel(closeDate)} · Vence ${dateLabel(dueDate)}`;
+  el.innerHTML=`
+    <div class="card-block">
+      <div class="card-header"><span class="card-name">${card}</span><span class="card-meta tabular">${BRL(totalSpent)} / ${BRL(limit)} · ${pct.toFixed(0)}%</span></div>
+      <div class="progress-bar"><div class="fill ${cls}" style="width:${Math.min(pct,100).toFixed(1)}%"></div></div>
+      <div class="cat-spending-grid">${categories.map(cat=>{
+        const b=budgets[cat.tag]||0; const cp=b>0?(cat.amount/b*100):0; const cc=cp>90?'over':cp>75?'warn':'';
+        return `<div class="cs-card"><div class="cs-top"><span class="cs-label">${cat.label}</span><span class="cs-vals tabular">${BRL(cat.amount)}${b?` / ${BRL(b)}`:''}</span></div><div class="cs-bar"><div class="cs-fill ${cc}" style="width:${b?Math.min(cp,100).toFixed(1):'30'}%"></div></div></div>`;
+      }).join('')}</div>
     </div>`;
 }
 
-// ─── Scheduled ───────────────────────────────────────────────
-function renderSched(sched, el) {
-  if (!sched?.length) { el.innerHTML = '<div class="empty-day col-muted">Sem eventos agendados.</div>'; return; }
-  const upcoming = [...sched].sort((a,b) => a.date.localeCompare(b.date));
-  el.innerHTML = upcoming.map(ev => {
-    const isIn = ev.type === 'entrada';
-    const cls = isIn ? 'col-pos' : 'col-neg';
-    const sign = isIn ? '+' : '−';
-    return `<div class="sched-row">
-      <span class="sched-date">${dateLabel(ev.date)}</span>
-      <span class="sched-desc">${ev.desc}</span>
-      <span class="sched-tag">${ev.tag}</span>
-      <span class="sched-amount ${cls} tabular">${sign} ${BRL(ev.amount)}</span>
+// ── Cards (Lucyana — múltiplos) ────────────────────────────────
+function renderLuCards(luCards, el) {
+  if(!luCards?.length){el.innerHTML='<div class="empty-day col-muted">Sem dados.</div>';return;}
+  el.innerHTML=luCards.map(c=>{
+    const pct=c.limit>0?(c.balance/c.limit*100):0;
+    const cls=pct>95?'over':pct>80?'warn':'';
+    const due=c.dueDate?`Vence ${dateLabel(c.dueDate)}`:'';
+    return `<div class="card-block">
+      <div class="card-header"><span class="card-name">${c.card}</span><span class="card-meta tabular">${BRL(c.balance)} / ${BRL(c.limit)} · ${pct.toFixed(0)}% · ${due}</span></div>
+      <div class="progress-bar"><div class="fill ${cls}" style="width:${Math.min(pct,100).toFixed(1)}%"></div></div>
+      <div class="cat-spending-grid">${(c.categories||[]).map(cat=>`<div class="cs-card"><div class="cs-top"><span class="cs-label">${cat.label}</span><span class="cs-vals tabular col-neg">${BRL(cat.amount)}</span></div></div>`).join('')}</div>
     </div>`;
   }).join('');
 }
 
-// ─── Summary ─────────────────────────────────────────────────
-function renderSummary(diary, cardItems, ids) {
-  let totalIn = 0, totalOut = 0;
-  diary.forEach(day => {
-    day.transactions.forEach(tx => {
-      if (tx.tag === 'cartao') return; // exclude card payment from totals
-      if (tx.amount < 0) totalIn += Math.abs(tx.amount);
-      else totalOut += tx.amount;
-    });
-  });
-  const balance = totalIn - totalOut;
+// ── Sched ──────────────────────────────────────────────────────
+function renderSched(sched, el) {
+  if(!sched?.length){el.innerHTML='<div class="empty-day col-muted">Sem eventos.</div>';return;}
+  el.innerHTML=[...sched].sort((a,b)=>a.date.localeCompare(b.date)).map(ev=>{
+    const isIn=ev.type==='entrada'; const cls=isIn?'col-pos':'col-neg'; const sign=isIn?'+':'−';
+    return `<div class="sched-row"><span class="sched-date">${dateLabel(ev.date)}</span><span class="sched-desc">${ev.desc}</span><span class="sched-tag">${ev.tag}</span><span class="sched-amount ${cls} tabular">${sign} ${BRL(ev.amount)}</span></div>`;
+  }).join('');
+}
 
-  document.getElementById(ids.in).textContent = BRL(totalIn);
-  document.getElementById(ids.out).textContent = BRL(totalOut);
-  const balEl = document.getElementById(ids.balance);
-  balEl.textContent = (balance >= 0 ? '+' : '−') + ' ' + BRL(balance);
-  balEl.className = 'value tabular ' + (balance >= 0 ? 'col-pos' : 'col-neg');
-
-  if (ids.cardTotal && cardItems) {
-    document.getElementById(ids.cardTotal).textContent = BRL(cardItems.totalSpent);
-    const sub = document.getElementById(ids.cardSub);
-    if (sub) sub.textContent = `Vence ${dateLabel(cardItems.dueDate)}`;
+// ── Summary ────────────────────────────────────────────────────
+function renderSummary(diary, ids, skipTags) {
+  const skip = skipTags || SKIP_TAGS;
+  let totalIn=0, totalOut=0;
+  diary.forEach(day => day.transactions.forEach(tx => {
+    if(skip.has(tx.tag)) return;
+    if(tx.amount<0) totalIn+=Math.abs(tx.amount);
+    else totalOut+=tx.amount;
+  }));
+  const bal=totalIn-totalOut;
+  if(ids.in) document.getElementById(ids.in).textContent=BRL(totalIn);
+  if(ids.out) document.getElementById(ids.out).textContent=BRL(totalOut);
+  if(ids.balance){
+    const el=document.getElementById(ids.balance);
+    el.textContent=(bal>=0?'+':'−')+' '+BRL(bal);
+    el.className='value tabular '+(bal>=0?'col-pos':'col-neg');
   }
 }
 
-// ─── Main load ───────────────────────────────────────────────
+function renderLuSummary(data) {
+  const b=data.luBalances||{};
+  const contaEl=document.getElementById('lu-conta');
+  if(contaEl){ contaEl.textContent=BRL(b.itau_conta||0); }
+
+  let impostos=0;
+  (data.luDiary||[]).forEach(day=>day.transactions.forEach(tx=>{if(tx.tag==='impostos') impostos+=tx.amount;}));
+  const impEl=document.getElementById('lu-impostos');
+  if(impEl) impEl.textContent=BRL(impostos);
+
+  const debtEl=document.getElementById('lu-card-debt');
+  if(debtEl) debtEl.textContent=BRL(b.total_divida_cartoes||0);
+
+  // compute saídas
+  const SKIP_LU=new Set(['cartao','transferência_propria','receita','receita_s3','receita_joewerton','saque','ignorar']);
+  let luOut=0;
+  (data.luDiary||[]).forEach(day=>day.transactions.forEach(tx=>{if(!SKIP_LU.has(tx.tag)&&tx.amount>0) luOut+=tx.amount;}));
+  const outEl=document.getElementById('lu-out');
+  if(outEl) outEl.textContent=BRL(luOut);
+
+  // alert if conta negative
+  const alertEl=document.getElementById('lu-alert');
+  if(alertEl && b.itau_conta<0) {
+    alertEl.innerHTML=`<div class="alert">Atenção: conta Itaú com saldo negativo de ${BRL(b.itau_conta)} — cheque especial ativo.</div>`;
+  }
+}
+
+// ── Load ───────────────────────────────────────────────────────
 async function loadData() {
-  document.getElementById('status-left').textContent = 'Carregando dados...';
+  document.getElementById('status-left').textContent='Carregando dados...';
   try {
-    const [dataRes, rulesRes] = await Promise.all([
-      fetch('dados.json'),
-      fetch('regras_categorizacao.json')
-    ]);
+    const [dataRes] = await Promise.all([fetch('dados.json')]);
     const data = await dataRes.json();
-    const rules = await rulesRes.json();
 
     // PF
-    renderSummary(data.diary, data.cardItems, {
-      in: 'pf-in', out: 'pf-out', balance: 'pf-balance',
-      cardTotal: 'pf-card-total', cardSub: 'pf-card-sub'
-    });
-    renderCalendar('pf', data.diary, document.getElementById('day-detail'));
-    renderCategories(data.diary, rules, document.getElementById('pf-categories'));
+    renderSummary(data.diary, {in:'pf-in',out:'pf-out',balance:'pf-balance'});
+    const pfCardEl=document.getElementById('pf-card-total');
+    if(pfCardEl&&data.cardItems) pfCardEl.textContent=BRL(data.cardItems.totalSpent);
+    const pfCardSub=document.getElementById('pf-card-sub');
+    if(pfCardSub&&data.cardItems) pfCardSub.textContent=`Vence ${dateLabel(data.cardItems.dueDate)}`;
+    renderCalendar('pf', data.diary, document.getElementById('pf-day-detail'));
+    renderCategories(data.diary, document.getElementById('pf-categories'));
     renderCard(data.cardItems, data.cardSpending, document.getElementById('pf-card-section'), document.getElementById('pf-card-dates'));
     renderSched(data.sched, document.getElementById('pf-sched'));
 
-    // PJ
-    renderSummary(data.azDiary || [], null, {
-      in: 'pj-in', out: 'pj-out', balance: 'pj-balance'
-    });
-    renderCalendar('pj', data.azDiary || [], document.getElementById('pj-day-detail'));
-    renderCategories(data.azDiary || [], rules, document.getElementById('pj-categories'));
-    renderSched(data.azSched, document.getElementById('pj-sched'));
+    // Lucyana
+    renderLuSummary(data);
+    renderCalendar('lu', data.luDiary||[], document.getElementById('lu-day-detail'));
+    renderLuCards(data.luCards, document.getElementById('lu-cards-section'));
+    renderCategories(data.luDiary||[], document.getElementById('lu-categories'));
+    renderSched(data.luSched, document.getElementById('lu-sched'));
 
-    const ts = data._meta?.updatedAt ? new Date(data._meta.updatedAt).toLocaleString('pt-BR') : 'desconhecido';
-    document.getElementById('status-left').textContent = `Atualizado em ${ts}`;
-    document.getElementById('status-right').textContent = `v${data._meta?.version || '1.0'}`;
-
+    const ts=data._meta?.updatedAt?new Date(data._meta.updatedAt).toLocaleString('pt-BR'):'—';
+    document.getElementById('status-left').textContent=`Atualizado em ${ts}`;
+    document.getElementById('status-right').textContent=`v${data._meta?.version||'1.0'}`;
   } catch(err) {
     console.error(err);
-    document.getElementById('status-left').textContent = 'Erro ao carregar dados.json';
+    document.getElementById('status-left').textContent='Erro ao carregar dados.json';
   }
 }
 
-// ─── Update button ───────────────────────────────────────────
 document.getElementById('btn-update').onclick = async () => {
-  const btn = document.getElementById('btn-update');
-  btn.classList.add('loading');
-  btn.innerHTML = '<span class="spinner"></span> Atualizando...';
-  // Future: call MCP tools via cowork bridge
-  // window.cowork?.callMcpTool('openfinance_force_sync', {})
+  const btn=document.getElementById('btn-update');
+  btn.classList.add('loading'); btn.innerHTML='<span class="spinner"></span> Atualizando...';
   await loadData();
-  btn.classList.remove('loading');
-  btn.textContent = 'Atualizar';
+  btn.classList.remove('loading'); btn.textContent='Atualizar';
 };
 
 loadData();
 </script>
-
 </body>
 </html>
