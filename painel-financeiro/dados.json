@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "version": "2.0",
+    "version": "2.1",
     "updatedAt": "2026-06-15",
     "updatedAtFull": "15/06/2026"
   },
@@ -133,10 +133,11 @@
     }
   ],
 
-  "pfSched": [
-    { "date": "2026-06-18", "desc": "Fechamento Nubank Gold 0852", "amount": 2862.85, "tag": "info" },
-    { "date": "2026-07-05", "desc": "Fatura Nubank Gold 0852", "amount": 2862.85, "tag": "cartao" }
+  "pfFixed": [
+    { "day": 17, "desc": "Fatura Cartão Nubank", "amount": null, "tag": "fatura", "variable": true }
   ],
+
+  "pfSched": [],
 
   "luAccounts": [
     { "bank": "Itaú", "owner": "Lucyana", "balance": -5108.06 }
