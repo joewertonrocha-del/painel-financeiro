@@ -6,7 +6,9 @@
   },
 
   "pfAccounts": [
-    { "bank": "Nubank", "owner": "você", "balance": 15.02 }
+    { "bank": "Nubank",     "owner": "você", "balance": 15.02 },
+    { "bank": "Inter",      "owner": "você", "balance": 0.00  },
+    { "bank": "Porto Bank", "owner": "você", "balance": 0.00  }
   ],
 
   "pfDiary": [
