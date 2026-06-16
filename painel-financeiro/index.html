@@ -149,10 +149,17 @@ section{margin-bottom:36px}
 .cal-cell.today{font-weight:700;color:var(--text)}
 .cal-cell.selected{background:var(--accent);color:#fff}
 .cal-cell.other{color:var(--muted);opacity:.35}
-.cal-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:2px}
-.cal-cell.selected .cal-dot{background:rgba(255,255,255,.7)}
+.cal-dots{display:flex;gap:3px;margin-top:3px;min-height:4px}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.cal-dot.var{background:var(--warn)}
+.cal-cell.selected .cal-dot{background:rgba(255,255,255,.85)}
+.cal-cell.selected .cal-dot.var{background:#ffd9a8}
 .day-detail{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r);padding:14px 16px;margin-top:12px;min-height:48px}
 .day-detail-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.day-total{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--hair)}
+.day-total-lbl{font-size:13px;font-weight:700}
+.day-total-val{font-size:14px;font-weight:700}
+.tx-amount.varia{color:var(--muted);font-style:italic}
 
 /* ── PRA ONDE FOI ── */
 .pof-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
@@ -602,19 +609,38 @@ function toggleCard(id){
 let pfCalDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
 let pfCalSel  = null;
 
+// Monta o mapa de contas previstas do mês: contas fixas (recorrentes por dia)
+// + eventos datados pontuais (pfSched).
+function buildSchedMap(y, m){
+  const map = {};
+  const mm = String(m+1).padStart(2,'0');
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const push = (dateStr, item)=>{ (map[dateStr]=map[dateStr]||[]).push(item); };
+
+  // contas fixas recorrentes (todo mês, no mesmo dia)
+  (_pfFixed||[]).forEach(f=>{
+    const day = Math.min(Number(f.day), daysInMonth);
+    push(`${y}-${mm}-${String(day).padStart(2,'0')}`,
+      { desc:f.desc, amount:f.amount, tag:f.tag, variable:!!f.variable });
+  });
+
+  // eventos datados pontuais
+  (_pfSched||[]).forEach(s=>{
+    const d = s.date.slice(0,10);
+    if(d.startsWith(`${y}-${mm}`))
+      push(d, { desc:s.desc, amount:s.amount, tag:s.tag, variable:!!s.variable });
+  });
+
+  return map;
+}
+
 function renderCal(containerEl, detailEl, calDate, sched, selectedDate){
   const y = calDate.getFullYear();
   const m = calDate.getMonth();
   const firstDay = new Date(y,m,1).getDay();
   const daysInMonth = new Date(y,m+1,0).getDate();
 
-  // map sched by date
-  const schedMap = {};
-  (sched||[]).forEach(s=>{
-    const d = s.date.slice(0,10);
-    if(!schedMap[d]) schedMap[d]=[];
-    schedMap[d].push(s);
-  });
+  const schedMap = buildSchedMap(y, m);
 
   const DAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   let html = DAYS.map(d=>`<div class="cal-dn">${d}</div>`).join('');
@@ -626,11 +652,14 @@ function renderCal(containerEl, detailEl, calDate, sched, selectedDate){
     const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = dateStr===todayStr;
     const isSel = dateStr===selectedDate;
-    const hasDot = schedMap[dateStr]?.length>0;
+    const items = schedMap[dateStr]||[];
     const cls = [isToday?'today':'',isSel?'selected':''].filter(Boolean).join(' ');
+    const dots = items.length
+      ? `<div class="cal-dots">${items.map(it=>`<div class="cal-dot ${it.variable?'var':''}"></div>`).join('')}</div>`
+      : '';
     html += `<div class="cal-cell ${cls}" data-date="${dateStr}" onclick="calClick(this,'${containerEl.id}','${detailEl.id}')">
       ${d}
-      ${hasDot?'<div class="cal-dot"></div>':''}
+      ${dots}
     </div>`;
   }
   containerEl.innerHTML = html;
@@ -646,22 +675,29 @@ function calClick(cell, calId, detailId){
   const detailEl = document.getElementById(detailId);
   calEl.querySelectorAll('.cal-cell').forEach(c=>c.classList.remove('selected'));
   cell.classList.add('selected');
-  // find schedmap
-  const scheds = _pfSched;
-  const schedMap = {};
-  scheds.forEach(s=>{ const d=s.date.slice(0,10); if(!schedMap[d])schedMap[d]=[]; schedMap[d].push(s); });
+  const [y,m] = dateStr.split('-').map(Number);
+  const schedMap = buildSchedMap(y, m-1);
   if(schedMap[dateStr]) renderDayDetail(dateStr, schedMap[dateStr], detailEl);
   else detailEl.innerHTML = `<div class="day-detail-title">${dLabel(dateStr)}</div><div class="empty">Sem contas previstas.</div>`;
 }
 
 function renderDayDetail(dateStr, items, el){
-  el.innerHTML = `<div class="day-detail-title">${dLabel(dateStr)}</div>`
-    + items.map(s=>{
-        const a = Number(s.amount);
-        return `<div class="tx-row"><div class="tx-left"><span class="tx-desc">${s.desc}</span><span class="tx-tag-pill">${s.tag}</span></div><span class="tx-amount num neg">${BRL(a)}</span></div>`;
-      }).join('');
+  let totalFixo = 0;
+  const rows = items.map(s=>{
+    const isVar = !!s.variable;
+    if(!isVar) totalFixo += Number(s.amount)||0;
+    const valHtml = isVar
+      ? `<span class="tx-amount varia">varia</span>`
+      : `<span class="tx-amount num neg">${BRL(Number(s.amount))}</span>`;
+    return `<div class="tx-row"><div class="tx-left"><span class="tx-desc">${s.desc}</span><span class="tx-tag-pill">${s.tag}</span></div>${valHtml}</div>`;
+  }).join('');
+  const totalHtml = totalFixo>0
+    ? `<div class="day-total"><span class="day-total-lbl">Total fixo</span><span class="day-total-val num neg">${BRL(totalFixo)}</span></div>`
+    : '';
+  el.innerHTML = `<div class="day-detail-title">${dLabel(dateStr)}</div>${rows}${totalHtml}`;
 }
 let _pfSched=[];
+let _pfFixed=[];
 
 // ── PRA ONDE FOI ─────────────────────────────────────────────────────────────
 function renderPOF(diary, cards, month, totalEl, monthEl, listEl){
@@ -781,6 +817,7 @@ async function loadData(){
   renderCardsList(data.pfCards||[], document.getElementById('pf-cards-list'));
 
   _pfSched = data.pfSched||[];
+  _pfFixed = data.pfFixed||[];
   renderCal(document.getElementById('pf-cal'), document.getElementById('pf-cal-detail'), pfCalDate, _pfSched, null);
   document.getElementById('pf-cal-title').textContent = `${MONTHS[pfCalDate.getMonth()]} ${pfCalDate.getFullYear()}`;
 
