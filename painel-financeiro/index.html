@@ -68,6 +68,14 @@ section{margin-bottom:36px}
 .saldo-amount{font-size:22px;font-weight:700;margin:5px 0 3px;letter-spacing:-.02em}
 .saldo-tag{font-size:10px;color:var(--neg);background:color-mix(in srgb,var(--neg) 14%,transparent);border-radius:4px;padding:1px 6px;display:inline-block}
 
+/* ── DIA NAV ── */
+.day-nav{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.day-nav-btn{font-size:20px;color:var(--text-2);padding:2px 10px;border-radius:6px;line-height:1}
+.day-nav-btn:hover{background:var(--surface-2);color:var(--text)}
+.day-nav-center{flex:1;display:flex;align-items:center;justify-content:center;gap:8px}
+.day-nav-label{font-size:14px;font-weight:600}
+.day-nav-total{font-size:12px;color:var(--muted)}
+
 /* ── DIÁRIOS ── */
 .ftabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
 .ftab{font-size:11px;font-weight:500;padding:4px 10px;border-radius:10px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--hair);transition:all .12s}
@@ -211,6 +219,14 @@ section{margin-bottom:36px}
         <h2>Diários</h2>
         <span class="sec-sub">saídas dia a dia</span>
       </div>
+      <div class="day-nav">
+        <button class="day-nav-btn" id="pf-day-prev">‹</button>
+        <div class="day-nav-center">
+          <span class="day-nav-label" id="pf-day-label"></span>
+          <span class="day-nav-total" id="pf-day-total"></span>
+        </div>
+        <button class="day-nav-btn" id="pf-day-next">›</button>
+      </div>
       <div class="ftabs" id="pf-ftabs">
         <button class="ftab on" data-f="todas">Todas</button>
         <button class="ftab" data-f="fixas">Fixas</button>
@@ -283,6 +299,14 @@ section{margin-bottom:36px}
       <div class="sec-head">
         <h2>Diários</h2>
         <span class="sec-sub">saídas dia a dia</span>
+      </div>
+      <div class="day-nav">
+        <button class="day-nav-btn" id="lu-day-prev">‹</button>
+        <div class="day-nav-center">
+          <span class="day-nav-label" id="lu-day-label"></span>
+          <span class="day-nav-total" id="lu-day-total"></span>
+        </div>
+        <button class="day-nav-btn" id="lu-day-next">›</button>
       </div>
       <div class="ftabs" id="lu-ftabs">
         <button class="ftab on" data-f="todas">Todas</button>
@@ -397,42 +421,86 @@ function filterTx(tx, f){
   return true;
 }
 
-function renderDiary(diary, el, f){
-  let html='';
-  [...diary].reverse().forEach(day=>{
-    const txs = day.transactions.filter(tx=>filterTx(tx,f));
-    if(!txs.length) return;
-    html += `<div class="tx-group"><div class="tx-date">${dLabel(day.date)}</div>`;
-    txs.forEach(tx=>{
-      const amt = Number(tx.amount);
-      const isIn = amt < 0;
-      const cls = isIn ? 'pos' : (tx.tag==='ignorar'?'muted':'neg');
-      const sign = isIn ? '+ ' : '− ';
-      const absAmt = Math.abs(amt).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-      html += `<div class="tx-row">
-        <div class="tx-left">
-          <span class="tx-desc">${tx.desc}</span>
-          <span class="tx-tag-pill">${tx.tag}</span>
-        </div>
-        <span class="tx-amount num ${cls}">${sign}R$ ${absAmt}</span>
-      </div>`;
-    });
-    html += '</div>';
-  });
-  el.innerHTML = html || '<div class="empty">Sem transações.</div>';
+function renderDiaryDay(diary, el, f, dateStr, labelEl, totalEl){
+  // Encontrar dados do dia
+  const day = diary.find(d=>d.date===dateStr);
+  const txs = day ? day.transactions.filter(tx=>filterTx(tx,f)) : [];
+
+  // Label do dia
+  if(labelEl){
+    const [y,m,d] = dateStr.split('-');
+    labelEl.textContent = `${d}/${m}/${y}`;
+  }
+
+  // Total do dia (só saídas, excluindo ignorar/receitas)
+  if(totalEl){
+    const total = txs.reduce((s,tx)=>{
+      const a=Number(tx.amount);
+      return (a>0 && !SKIP_POF.has(tx.tag)) ? s+a : s;
+    },0);
+    totalEl.textContent = total>0 ? `− ${BRL(total)}` : '';
+  }
+
+  if(!txs.length){
+    el.innerHTML = '<div class="empty">Sem transações neste dia.</div>';
+    return;
+  }
+
+  el.innerHTML = txs.map(tx=>{
+    const amt = Number(tx.amount);
+    const isIn = amt < 0;
+    const cls = isIn ? 'pos' : (tx.tag==='ignorar'?'muted':'neg');
+    const sign = isIn ? '+ ' : '− ';
+    const absAmt = Math.abs(amt).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return `<div class="tx-row">
+      <div class="tx-left">
+        <span class="tx-desc">${tx.desc}</span>
+        <span class="tx-tag-pill">${tx.tag}</span>
+      </div>
+      <span class="tx-amount num ${cls}">${sign}R$ ${absAmt}</span>
+    </div>`;
+  }).join('');
 }
 
-function setupFilterTabs(tabsEl, diaryEl, diary){
-  let cur = 'todas';
+function setupDiaryNav(prefix, diary, tabsEl, diaryEl){
+  // Sorted unique dates in diary
+  const dates = [...new Set(diary.map(d=>d.date))].sort();
+
+  // Start at today if exists, else last available date
+  let curDate = dates.includes(todayStr) ? todayStr : (dates[dates.length-1]||todayStr);
+  let curFilter = 'todas';
+
+  const labelEl = document.getElementById(prefix+'-day-label');
+  const totalEl = document.getElementById(prefix+'-day-total');
+  const prevBtn = document.getElementById(prefix+'-day-prev');
+  const nextBtn = document.getElementById(prefix+'-day-next');
+
+  function refresh(){
+    renderDiaryDay(diary, diaryEl, curFilter, curDate, labelEl, totalEl);
+    // dim nav buttons at boundaries
+    if(prevBtn) prevBtn.style.opacity = curDate<=dates[0] ? '.3' : '1';
+    if(nextBtn) nextBtn.style.opacity = curDate>=dates[dates.length-1] ? '.3' : '1';
+  }
+
+  if(prevBtn) prevBtn.addEventListener('click',()=>{
+    const idx = dates.indexOf(curDate);
+    if(idx>0){ curDate=dates[idx-1]; refresh(); }
+  });
+  if(nextBtn) nextBtn.addEventListener('click',()=>{
+    const idx = dates.indexOf(curDate);
+    if(idx<dates.length-1){ curDate=dates[idx+1]; refresh(); }
+  });
+
   tabsEl.querySelectorAll('.ftab').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      cur = btn.dataset.f;
+      curFilter=btn.dataset.f;
       tabsEl.querySelectorAll('.ftab').forEach(b=>b.classList.remove('on'));
       btn.classList.add('on');
-      renderDiary(diary, diaryEl, cur);
+      refresh();
     });
   });
-  renderDiary(diary, diaryEl, cur);
+
+  refresh();
 }
 
 // ── CARTÕES SUMMARY ──────────────────────────────────────────────────────────
@@ -708,7 +776,7 @@ async function loadData(){
 
   // PF
   renderSaldos(data.pfAccounts||[], document.getElementById('pf-saldos'), document.getElementById('pf-saldo-date'));
-  setupFilterTabs(document.getElementById('pf-ftabs'), document.getElementById('pf-diary'), data.pfDiary||[]);
+  setupDiaryNav('pf', data.pfDiary||[], document.getElementById('pf-ftabs'), document.getElementById('pf-diary'));
   renderCardsSummary(data.pfCards||[], document.getElementById('pf-cards-sum'));
   renderCardsList(data.pfCards||[], document.getElementById('pf-cards-list'));
 
@@ -741,7 +809,7 @@ async function loadData(){
     document.getElementById('lu-alert').innerHTML = `<div class="alert"><strong>⚠ Cheque especial em uso:</strong> ${neg.map(a=>`${a.bank} ${BRL(Number(a.balance))}`).join(', ')} — limite disponível.</div>`;
   }
   renderSaldos(luAccounts, document.getElementById('lu-saldos'), document.getElementById('lu-saldo-date'));
-  setupFilterTabs(document.getElementById('lu-ftabs'), document.getElementById('lu-diary'), data.luDiary||[]);
+  setupDiaryNav('lu', data.luDiary||[], document.getElementById('lu-ftabs'), document.getElementById('lu-diary'));
   renderCardsSummary(data.luCards||[], document.getElementById('lu-cards-sum'));
   renderCardsList(data.luCards||[], document.getElementById('lu-cards-list'));
   renderSched(data.luSched||[], document.getElementById('lu-sched-list'));
